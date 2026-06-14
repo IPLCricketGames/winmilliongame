@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة من سيربح المليون الاحترافية 🏆</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0b093b 0%, #03021e 100%);
+            --gold: #ffd700;
+            --blue-btn: linear-gradient(180deg, #101975 0%, #080e46 100%);
+            --border-color: #1e3799;
+            --correct: #2ecc71;
+            --wrong: #e74c3c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* الجزء الرئيسي: الأسئلة والأجوبة */
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 500px;
+        }
+
+        .lifelines {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .lifeline-btn {
+            background: var(--blue-btn);
+            border: 2px solid var(--gold);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .lifeline-btn:hover:not(:disabled) {
+            background: var(--gold);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .lifeline-btn:disabled {
+            border-color: #555;
+            color: #555;
+            background: #222;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .question-box {
+            width: 100%;
+            background: linear-gradient(90deg, transparent 0%, #0d1b4f 50%, transparent 100%);
+            border-top: 2px solid var(--gold);
+            border-bottom: 2px solid var(--gold);
+            padding: 25px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .answer-btn {
+            background: var(--blue-btn);
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            padding: 15px 25px;
+            color: white;
+            font-size: 1.1rem;
+            text-align: right;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            outline: none;
+        }
+
+        .answer-btn::before {
+            content: attr(data-letter) " ";
+            color: var(--gold);
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .answer-btn:hover:not(:disabled) {
+            border-color: var(--gold);
+            background: linear-gradient(180deg, #1b2a93 0%, #101967 100%);
+        }
+
+        .answer-btn.selected {
+            background: #f39c12 !important;
+            border-color: white;
+            color: black;
+        }
+
+        .answer-btn.correct {
+            background: var(--correct) !important;
+            border-color: white;
+            color: white;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        .answer-btn.wrong {
+            background: var(--wrong) !important;
+            border-color: white;
+            color: white;
+        }
+
+        /* القائمة الجانبية: شجرة المبالغ */
+        .money-sidebar {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--border-color);
+        }
+
+        .money-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 4px;
+        }
+
+        .money-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            color: #a4b0be;
+        }
+
+        .money-item.active {
+            background: var(--gold);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .money-item.milestone {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .action-btns {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .withdraw-btn {
+            background: #e67e22;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .withdraw-btn:hover { background: #d35400; }
+
+        /* شاشات النهاية والمساعدة */
+        .overlay-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(3, 2, 30, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .overlay-screen h2 { font-size: 2.5rem; color: var(--gold); margin-bottom: 15px; }
+        .overlay-screen p { font-size: 1.5rem; margin-bottom: 25px; }
+
+        .popup-info {
+            background: #101975;
+            border: 2px solid var(--gold);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-top: 15px;
+            max-width: 400px;
+            text-align: center;
+            display: none;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.02); }
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .game-container { grid-template-columns: 1fr; }
+            .money-sidebar { order: -1; }
+            .answers-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen" class="overlay-screen">
+        <h2>من سيربح المليون؟ 🏆</h2>
+        <p>اختبر معلوماتك العامة، واستخدم وسائل المساعدة بحذر للوصول إلى المليون!</p>
+        <button class="lifeline-btn" style="font-size: 1.2rem; padding: 15px 40px;" onclick="startGame()">ابدأ اللعب الآن 🚀</button>
+    </div>
+
+    <div id="gameOverScreen" class="overlay-screen" style="display: none;">
+        <h2 id="endTitle">للأسف خسرت!</h2>
+        <p id="endMessage">لقد حصلت على: 0 ريال</p>
+        <button class="lifeline-btn" style="font-size: 1.2rem; padding: 15px 40px;" onclick="location.reload()">اللعب من جديد 🔄</button>
+    </div>
+
+    <div class="game-container" id="gameContainer" style="display: none;">
+        
+        <div class="main-area">
+            <div class="lifelines">
+                <button id="btn5050" class="lifeline-btn" onclick="use5050()">50 : 50 ✂️</button>
+                <button id="btnFriend" class="lifeline-btn" onclick="useCallFriend()">اتصال بصديق 📞</button>
+                <button id="btnAudience" class="lifeline-btn" onclick="useAudience()">رأي الجمهور 👥</button>
+            </div>
+
+            <div id="helpPopup" class="popup-info"></div>
+
+            <div class="question-box" id="questionText">جاري تحميل السؤال...</div>
+
+            <div class="answers-grid">
+                <button class="answer-btn" data-letter="أ" id="btn0" onclick="checkAnswer(0)"></button>
+                <button class="answer-btn" data-letter="ب" id="btn1" onclick="checkAnswer(1)"></button>
+                <button class="answer-btn" data-letter="ج" id="btn2" onclick="checkAnswer(2)"></button>
+                <button class="answer-btn" data-letter="د" id="btn3" onclick="checkAnswer(3)"></button>
+            </div>
+        </div>
+
+        <div class="money-sidebar">
+            <ul class="money-list" id="moneyList">
+                </ul>
+            <div class="action-btns">
+                <button class="withdraw-btn" onclick="withdraw()">انسحاب بالمبلغ الحالي 💰</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // بنك الأسئلة (15 سؤالاً متدرجة الصعوبة)
+        const quizData = [
+            { q: "ما هو عاصمة جمهورية مصر العربية؟", a: ["الإسكندرية", "القاهرة", "الجيزة", "الأقصر"], c: 1 },
+            { q: "كم عدد كواكب المجموعة الشمسية؟", a: ["7 كواكب", "8 كواكب", "9 كواكب", "10 كواكب"], c: 1 },
+            { q: "ما هو الحيوان الذي يلقب بسفينة الصحراء؟", a: ["الحصان", "الجمل", "الحمار الوحشي", "الفهد"], c: 1 },
+            { q: "ما هي عملة المملكة العربية السعودية؟", a: ["الدينار", "الدرهم", "الريال", "الجنيه"], c: 2 },
+            { q: "ما هو العضو المسؤول عن ضخ الدم في جسم الإنسان؟", a: ["الرئتان", "المخ", "الكبد", "القلب"], c: 3 }, // محطة الـ 1000 الأولى
+            { q: "في أي قارة تقع دولة المغرب؟", a: ["آسيا", "أوروبا", "أفريقيا", "أستراليا"], c: 2 },
+            { q: "ما هو أطول نهر في العالم؟", a: ["نهر الأمازون", "نهر النيل", "نهر الميسيسيبي", "نهر اليانغتسي"], c: 1 },
+            { q: "من هو مكتشف أمريكا؟", a: ["فاسكو دا غاما", "كريستوفر كولومبوس", "ماجلان", "ابن بطوطة"], c: 1 },
+            { q: "ما هو أكبر المحيطات مساحة على الأرض؟", a: ["المحيط الأطلسي", "المحيط الهندي", "المحيط المتجمد", "المحيط الهادئ"], c: 3 },
+            { q: "ما هو أصلب مادة طبيعية على وجه الأرض؟", a: ["الحديد", "الألماس", "الذهب", "النحاس"], c: 1 }, // محطة الـ 32,000 الثانية
+            { q: "كم عدد عظام جسم الإنسان البالغ؟", a: ["206 عظمة", "305 عظمة", "150 عظمة", "215 عظمة"], c: 0 },
+            { q: "ما هي الدولة العربية التي يمر بها خط الاستواء؟", a: ["اليمن", "السودان", "الصومال", "سلطنة عمان"], c: 2 },
+            { q: "من هو الشاعر الملقب بأمير الشعراء؟", a: ["حافظ إبراهيم", "أحمد شوقي", "المتنبي", "نزار قباني"], c: 1 },
+            { q: "ما هو الغاز الأكثر وفرة في الغلاف الجوي للأرض؟", a: ["الأكسجين", "النيتروجين", "ثاني أكسيد الكربون", "الهيدروجين"], c: 1 },
+            { q: "من هو العالم العربي الذي أسس علم الجبر؟", a: ["ابن سينا", "الخوارزمي", "ابن الهيثم", "الرازي"], c: 1 } // سؤال المليون
+        ];
+
+        const moneyTree = [
+            "100", "200", "300", "500", "1,000",
+            "2,000", "4,000", "8,000", "16,000", "32,000",
+            "64,000", "125,000", "250,000", "500,000", "1,000,000"
+        ];
+
+        let currentStage = 0;
+        let isAnswerChecking = false;
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'grid';
+            buildMoneyTree();
+            loadQuestion();
+        }
+
+        function buildMoneyTree() {
+            const list = document.getElementById('moneyList');
+            list.innerHTML = "";
+            moneyTree.forEach((amount, index) => {
+                const li = document.createElement('li');
+                li.className = "money-item";
+                if (index === 4 || index === 9 || index === 14) li.classList.add('milestone');
+                li.id = `stage-${index}`;
+                li.innerHTML = `<span>${index + 1} ♦</span> <span>${amount} ريال</span>`;
+                list.appendChild(li);
+            });
+            updateSidebar();
+        }
+
+        function updateSidebar() {
+            moneyTree.forEach((_, index) => {
+                const el = document.getElementById(`stage-${index}`);
+                if (el) el.classList.remove('active');
+            });
+            const currentEl = document.getElementById(`stage-${currentStage}`);
+            if (currentEl) currentEl.classList.add('active');
+        }
+
+        function loadQuestion() {
+            isAnswerChecking = false;
+            document.getElementById('helpPopup').style.display = 'none';
+            
+            // تفريغ الألوان وإعادة تمكين الأزرار
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                const btnEl = document.getElementById(`btn${i}`);
+                btnEl.className = "answer-btn";
+                btnEl.disabled = false;
+                btnEl.style.opacity = "1";
+            }
+
+            const currentQuestion = quizData[currentStage];
+            document.getElementById('questionText').innerText = currentQuestion.q;
+            
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`btn${i}`).innerText = currentQuestion.a[i];
+            }
+            updateSidebar();
+        }
+
+        function checkAnswer(selectedIndex) {
+            if (isAnswerChecking) return;
+            isAnswerChecking = true;
+
+            const currentQuestion = quizData[currentStage];
+            const selectedBtn = document.getElementById(`btn${selectedIndex}`);
+            
+            selectedBtn.classList.add('selected');
+
+            // تأثير التفكير والانتظار قليلاً لزيادة الحماس
+            setTimeout(() => {
+                selectedBtn.classList.remove('selected');
+                if (selectedIndex === currentQuestion.c) {
+                    selectedBtn.classList.add('correct');
+                    
+                    setTimeout(() => {
+                        if (currentStage === 14) {
+                            endGame(true, "1,000,000"); // الفوز بالمليون!
+                        } else {
+                            currentStage++;
+                            loadQuestion();
+                        }
+                    }, 1500);
+                } else {
+                    selectedBtn.classList.add('wrong');
+                    document.getElementById(`btn${currentQuestion.c}`).classList.add('correct');
+                    setTimeout(() => {
+                        endGame(false);
+                    }, 2000);
+                }
+            }, 1500);
+        }
+
+        // وسائل المساعدة: 50:50
+        function use5050() {
+            const currentQuestion = quizData[currentStage];
+            let wrongIndices = [];
+            for (let i = 0; i < 4; i++) {
+                if (i !== currentQuestion.c) wrongIndices.push(i);
+            }
+            // خلط الإجابات الخاطئة وحذف اثنتين منها فقط
+            wrongIndices.sort(() => Math.random() - 0.5);
+            document.getElementById(`btn${wrongIndices[0]}`).style.opacity = "0";
+            document.getElementById(`btn${wrongIndices[0]}`).disabled = true;
+            document.getElementById(`btn${wrongIndices[1]}`).style.opacity = "0";
+            document.getElementById(`btn${wrongIndices[1]}`).disabled = true;
+
+            document.getElementById('btn5050').disabled = true;
+        }
+
+        // وسائل المساعدة: الاتصال بصديق
+        function useCallFriend() {
+            const currentQuestion = quizData[currentStage];
+            const letters = ["أ", "ب", "ج", "د"];
+            let answerGuarantee = Math.random();
+            let suggestedAnswer = "";
+
+            // كلما زاد رقم السؤال، قل احتمال معرفة الصديق للإجابة الصحيحة
+            if (answerGuarantee > (currentStage * 0.05)) {
+                suggestedAnswer = letters[currentQuestion.c];
+            } else {
+                let wrongIndex = (currentQuestion.c + 1) % 4;
+                suggestedAnswer = letters[wrongIndex];
+            }
+
+            const popup = document.getElementById('helpPopup');
+            popup.innerText = `📞 الصديق يقول: "أنا واثق بنسبة كبيرة أن الإجابة الصحيحة هي (${suggestedAnswer})"`;
+            popup.style.display = 'block';
+
+            document.getElementById('btnFriend').disabled = true;
+        }
+
+        // وسائل المساعدة: رأي الجمهور
+        function useAudience() {
+            const currentQuestion = quizData[currentStage];
+            let votes = [0, 0, 0, 0];
+            
+            // توزيع ذكي يعطي الأغلبية للإجابة الصحيحة غالباً بناءً على الصعوبة
+            let correctChance = Math.max(40, 90 - (currentStage * 4));
+            votes[currentQuestion.c] = correctChance;
+            
+            let remaining = 100 - correctChance;
+            for (let i = 0; i < 4; i++) {
+                if (i !== currentQuestion.c) {
+                    let share = Math.floor(Math.random() * remaining);
+                    votes[i] = share;
+                    remaining -= share;
+                }
+            }
+            votes[0] += remaining; // تجميع الباقي في الخيار الأول
+
+            const popup = document.getElementById('helpPopup');
+            popup.innerText = `👥 تصويت الجمهور:\n أ: ${votes[0]}% | ب: ${votes[1]}% | ج: ${votes[2]}% | د: ${votes[3]}%`;
+            popup.style.display = 'block';
+
+            document.getElementById('btnAudience').disabled = true;
+        }
+
+        // الانسحاب
+        function withdraw() {
+            if (currentStage === 0) {
+                endGame(true, "0");
+            } else {
+                endGame(true, moneyTree[currentStage - 1]);
+            }
+        }
+
+        // حساب المبالغ المضمونة عند الخسارة
+        function calculateGuaranteedMoney() {
+            if (currentStage >= 9) return "32,000"; // المحطة الثانية المضمونة
+            if (currentStage >= 4) return "1,000";  // المحطة الأولى المضمونة
+            return "0";
+        }
+
+        function endGame(isWithdrawOrWin, customAmount = null) {
+            document.getElementById('gameContainer').style.display = 'none';
+            const screen = document.getElementById('gameOverScreen');
+            screen.style.display = 'flex';
+
+            if (isWithdrawOrWin) {
+                document.getElementById('endTitle').innerText = customAmount === "1,000,000" ? "🎉 مبروك! لقد ربحت المليون! 🎉" : "لقد انسحبت بالفوز!";
+                document.getElementById('endMessage').innerText = `المبلغ المالي الإجمالي: ${customAmount} ريال`;
+            } else {
+                let guaranteed = calculateGuaranteedMoney();
+                document.getElementById('endTitle').innerText = "للأسف إجابة خاطئة! انتهت اللعبة.";
+                document.getElementById('endMessage').innerText = `سقطت إلى رصيد المحطة المضمونة: ${guaranteed} ريال`;
+            }
+        }
+    </script>
+</body>
+</html>
